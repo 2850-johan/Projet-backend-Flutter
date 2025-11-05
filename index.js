@@ -80,16 +80,18 @@ app.post('/auth/google', async (req, res) => {
     }
 
     // Générer TON JWT (pour protéger tes autres routes)
+//ici on permet d'avoir le nom dans le token  AINI que l'email et l'id
+//
     const accessToken = jwt.sign(
       { uid: user.id_users, email: user.email },
       process.env.JWT_SECRET,
-      { expiresIn: '1h' }
+      { expiresIn: '1h' }// on ordonne le temps d'expiration du token ici à 1 heure
     );
     console.log('🔑 Token JWT généré');
 
-    res.json({ accessToken, expiresIn: 3600, user });
+    res.json({ accessToken, expiresIn: 3600, user }); // on renvoie aussi le user info, 
   } catch (e) {
-    console.error('❌ Auth Google error:', e?.message || e);
+    console.error('❌ Auth Google error:', e?.message || e);//ici on verifie si le token est valide et est indentique à celui de google.
     res.status(401).json({ error: 'idToken invalide ou non vérifiable' });
   }
 });
