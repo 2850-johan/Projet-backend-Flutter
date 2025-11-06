@@ -2,8 +2,8 @@
 const axios = require('axios');
 
 const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
-const MISTRAL_MODEL   = process.env.MISTRAL_MODEL || 'mistral-small-latest';
-const MISTRAL_TIMEOUT = Number(process.env.MISTRAL_TIMEOUT_MS || 20000);
+const MISTRAL_MODEL = process.env.MISTRAL_MODEL || 'mistral-large-latest';
+const MISTRAL_TIMEOUT = Number(process.env.MISTRAL_TIMEOUT_MS || 7 0000);
 
 /**
  * Construit un prompt clair + contrainte JSON stricte.
@@ -52,7 +52,7 @@ async function generateQuiz({ theme, level, count }) {
     ],
     temperature: 0.4,
     max_tokens: 1200,
-    // 🎯 CORRECTION CLÉ : Forcer la sortie du modèle au format JSON
+    //  CORRECTION CLÉ : Forcer la sortie du modèle au format JSON
     response_format: { type: 'json_object' }, 
   };
 
