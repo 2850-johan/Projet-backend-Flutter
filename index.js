@@ -262,6 +262,44 @@ app.post('/score', async (req, res) => {
   }
 });
 
+// -------- ROUTES Classement --------
+// index.js
+
+// -------- LEADERBOARD (Classement Global) --------
+// Renvoie le MEILLEUR score de chaque utilisateur
+app.get('/leaderboard', async (req, res) => {
+  try {
+    // Note : Nous simplifions. Le code React calcule un score total complexe avec bonus de temps.
+    // Nous allons d'abord classer par le 'score' simple (bonnes réponses).
+    // Vous devrez d'abord AJOUTER les colonnes 'theme', 'total_questions', 'level_label' à votre table 'score'
+    
+    const [rows] = await pool.query(`
+      SELECT 
+        u.nom AS user_nom, 
+        s.level_label AS level,
+        MAX(s.score) AS best_score, 
+        s.total_questions
+      FROM score s
+      JOIN users u ON s.id_users = u.id_users
+      GROUP BY u.nom, s.level_label, s.total_questions
+      ORDER BY best_score DESC, u.nom ASC
+      LIMIT 10
+    `);
+    
+    // Ajout du rang (similaire à la logique React)
+    const leaderboard = rows.map((entry, index) => ({
+      ...entry,
+      rank: index + 1,
+    }));
+
+    res.json(leaderboard);
+
+  } catch (e) {
+    console.error('Erreur GET /leaderboard:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Ping
 app.get('/', (_req, res) => res.send('✅ Backend OK'));
 

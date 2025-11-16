@@ -3,7 +3,7 @@ const axios = require('axios');
 
 const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
 const MISTRAL_MODEL = process.env.MISTRAL_MODEL || 'mistral-large-latest';
-const MISTRAL_TIMEOUT = Number(process.env.MISTRAL_TIMEOUT_MS || 7 0000);
+const MISTRAL_TIMEOUT = Number(process.env.MISTRAL_TIMEOUT_MS || 70000); // 70s OK
 
 /**
  * Construit un prompt clair + contrainte JSON stricte.
@@ -17,14 +17,14 @@ Nombre de questions: ${count}
 
 RENVOIE STRICTEMENT un JSON (pas de texte autour), au format:
 {
-  "questions": [
-    {
-      "question": "…",
-      "choices": ["…","…","…","…"],
-      "answer": 0,
-      "explanation": "…"
-    }
-  ]
+  "questions": [
+    {
+      "question": "…",
+      "choices": ["…","…","…","…"],
+      "answer": 0,
+      "explanation": "…"
+    }
+  ]
 }
 
 Règles:
@@ -48,11 +48,13 @@ async function generateQuiz({ theme, level, count }) {
     model: MISTRAL_MODEL,
     messages: [
       { role: 'system', content: 'You are a helpful assistant.' },
-      { role: 'user',   content: buildSystemPrompt(theme, level, count) }
+      { role: 'user',   content: buildSystemPrompt(theme, level, count) }
     ],
     temperature: 0.4,
-    max_tokens: 1200,
-    //  CORRECTION CLÉ : Forcer la sortie du modèle au format JSON
+    
+    // 🎯 CORRECTION: Augmentation de la limite de tokens
+    max_tokens: 4000, 
+    
     response_format: { type: 'json_object' }, 
   };
 
@@ -76,7 +78,6 @@ async function generateQuiz({ theme, level, count }) {
     try {
       data = JSON.parse(text);
     } catch (_) {
-      // 💡 On renvoie le texte brut pour le débogage si le JSON échoue toujours
       throw new Error(`Réponse Mistral non-JSON. Ajuste le prompt/temperature. Réponse brute: ${text}`); 
     }
 
@@ -92,13 +93,11 @@ async function generateQuiz({ theme, level, count }) {
       ) {
         throw new Error('Schéma question invalide (question/choices/answer).');
       }
-      // Normalisation optionnelle
       q.explanation = q.explanation || '';
     }
 
     return data; // { questions: [...] }
   } catch (error) {
-    // Si Axios échoue (timeout, 401, 500)
     if (axios.isAxiosError(error)) {
         console.error('Erreur Axios:', error.response?.data || error.message);
         throw new Error(`Erreur API: ${error.response?.data?.error?.message || error.message}`);
