@@ -59,6 +59,7 @@ app.use((req, _res, next) => {
 });
 
 // --- Middleware de vérification JWT ---
+//Ici on protège les routes qui nécessitent une authentification avec le verificateur de token JWT.
 function verifyToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
