@@ -2,7 +2,7 @@
 const axios = require('axios');
 
 const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
-const MISTRAL_MODEL = process.env.MISTRAL_MODEL || 'mistral-small-latest';
+const MISTRAL_MODEL = process.env.MISTRAL_MODEL || 'open-mistral-7b';
 const MISTRAL_TIMEOUT = Number(process.env.MISTRAL_TIMEOUT_MS || 70000); // 70s OK
 
 /**

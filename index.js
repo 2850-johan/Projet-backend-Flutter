@@ -7,13 +7,13 @@ const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 
 // --- Imports de Swagger ---
-const swaggerUi = require('swagger-ui-express');
+const swaggerUi = require('swagger-ui-express');// librairie Swagger UI pour Express
 const swaggerJSDoc = require('swagger-jsdoc');
 
-// 🧠 Importe la logique d'appel à l'API Mistral depuis ai.js
+//  Importe la logique d'appel à l'API Mistral depuis ai.js
 const { generateQuiz } = require('./ai'); 
 
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);// cre un client OAuth2 pour verifier les idTokens Google
 
 // Init Express
 const app = express();
@@ -27,7 +27,7 @@ const swaggerOptions = {
     info: {
       title: 'Quiz App API (Flutter)',
       version: '1.0.0',
-      description: 'Documentation de l\'API backend pour l\'application QuizMaster Flutter, gérant l\'authentification, la génération de quiz (Mistral AI) et les scores (MySQL).',
+      description: 'Documentation de l\'API backend pour l\'application Quiz App Flutter, gérant l\'authentification, la génération de quiz (Mistral AI) et les scores (MySQL).',
     },
     servers: [
       {
@@ -52,7 +52,7 @@ const swaggerOptions = {
 const swaggerDocs = swaggerJSDoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-// Logger simple des requêtes
+// --- Middleware de logging simple pour  afficher en console  les get et post---
 app.use((req, _res, next) => {
   console.log(`➡️  ${req.method} ${req.url}`);
   next();
@@ -61,13 +61,13 @@ app.use((req, _res, next) => {
 // --- Middleware de vérification JWT ---
 //Ici on protège les routes qui nécessitent une authentification avec le verificateur de token JWT.
 function verifyToken(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const authHeader = req.headers['authorization'];//recuperation dans le header du token
+  const token = authHeader && authHeader.split(' ')[1]; // extraction du token Bearer
 
-  if (token == null) return res.sendStatus(401);
+  if (token == null) return res.sendStatus(401); //condition si token manquant , on gnerer l'erreur 401
 
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) return res.sendStatus(403);
+    if (err) return res.sendStatus(403);// apres la premiere condition , on verifie si le token est vieux ou invalide , on gnerer l'erreur 403
     req.user = user;
     next();
   });
@@ -100,17 +100,19 @@ function verifyToken(req, res, next) {
 app.post('/auth/google', async (req, res) => {
   console.log('📥 Requête /auth/google reçue');
   let idToken = (req.body?.idToken || '').toString().trim();
-  const idTokenB64 = (req.body?.idTokenB64 || '').toString().trim();
-  if (!idToken && idTokenB64) {
+  const idTokenB64 = (req.body?.idTokenB64 || '').toString().trim(); //permet de le decode meme si il est en base64
+  if (!idToken && idTokenB64)  // Si idToken absent, on essaye le base64
+    {
     try { idToken = Buffer.from(idTokenB64, 'base64').toString('utf8'); } catch {}
   }
   console.log('Token reçu (début):', idToken.substring(0, 20));
 
   try {
-    if (!idToken) return res.status(400).json({ error: 'idToken manquant' });
+    if (!idToken) return res.status(400).json({ error: 'idToken manquant' }); // permet de détecter les erreurs client tôt
     const parts = idToken.split('.');
     console.log('len=', idToken.length, 'segments=', parts.length);
-    const ticket = await googleClient.verifyIdToken({
+    const ticket = await googleClient.verifyIdToken // permet de verifier que l'idtoken est bel et bien pour un utilisateur google
+    ({
       idToken,
       audience: process.env.GOOGLE_CLIENT_ID,
     });
@@ -262,11 +264,12 @@ app.post('/ai/quiz', verifyToken, async (req, res) => {
     try {
         console.log(`🧠 Demande de quiz: ${topic} (${level}, ${count} questions) par ${req.user.email}`);
         const quizData = await generateQuiz({ theme: topic, level, count });
-        res.json(quizData); 
-    } catch (e) {
+        res.json(quizData);// renvoie le quiz généré au client (flutter)
+    } catch (e)  // la c'est juste  la gestion des erreurs 
+    {
         console.error('❌ Erreur de génération de quiz:', e?.message || e);
         let status = 500;
-        if (e.message.includes('MISTRAL_API_KEY')) status = 503;
+        if (e.message.includes('MISTRAL_API_KEY')) status = 503; // si reponse manquante
         if (e.message.includes('Schéma invalide') || e.message.includes('non-JSON')) status = 500;
         res.status(status).json({ error: 'Échec de la génération du quiz par l\'IA.', details: e.message });
     }
@@ -516,7 +519,7 @@ app.get('/leaderboard', async (req, res) => {
  *       200:
  *         description: '✅ Backend OK'
  */
-app.get('/', (_req, res) => res.send('✅ Backend OK'));
+app.get('/', (_req, res) => res.send('✅ Backend OK')); // definit juste la route racine qui sert de ping
 
 // Start
 const PORT = process.env.PORT || 3000;
